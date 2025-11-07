@@ -9,8 +9,8 @@ const verifyUser = async (req, res) => {
       `SELECT ID_Cliente, hash FROM cliente WHERE correo = ? OR Codigo_cuenta = ? AND hash = ?`,
       [user, user, pass]
     );
-    console.log(result);
-    res.json({ user: result[0] });
+    console.log(result[0]);
+    res.json(result[0]);
   } catch (err) {
     console.log(err);
     res.json({ message: err });
@@ -34,7 +34,7 @@ const createUser = async (req, res) => {
 
 const getDetalles = async (req, res) => {
   try {
-    const { hash } = req.body;
+    const hash = req.get('hash');
     const conn = await getConnSQL();
     const result = await conn.query(
       `SELECT Codigo_cuenta, Tipo_Cuenta, nombres, apellidos, correo, telefono, direccion, balance, re.deudas, (re.hist_ingresos-re.hist_egresos) as bal_mes
@@ -50,7 +50,7 @@ const getDetalles = async (req, res) => {
 
 const getBalHistory = async (req, res) => {
   try {
-    const { hash } = req.body;
+    const hash = req.get('hash');
     const conn = await getConnSQL();
     const result = await conn.query(
       `SELECT cantidad, tipo, timestamp, c.nombres,  c.apellidos FROM (SELECT t.cantidad, t.tipo, t.timestamp, t.ID_receptor FROM cliente c INNER JOIN transaccion t ON t.ID_emisor = c.ID_Cliente OR t.ID_receptor = c.ID_Cliente WHERE hash = ?) li LEFT JOIN cliente c on li.ID_receptor = c.ID_Cliente
@@ -66,7 +66,7 @@ const getBalHistory = async (req, res) => {
 
 const getLoanHistory = async (req, res) => {
   try {
-    const { hash } = req.body;
+    const hash = req.get('hash');
     const conn = await getConnSQL();
     const result = await conn.query(
       `SELECT p.nombre, p.cantidad_total, p.plazo, p.estado FROM cliente c INNER JOIN prestamo p on c.ID_Cliente = p.ID_Cliente WHERE hash = ?`,
@@ -81,7 +81,7 @@ const getLoanHistory = async (req, res) => {
 
 const getStats = async (req, res) => {
   const conn = await getConnSQL();
-  const { hash } = req.body;
+  const hash = req.get('hash');
   const result = await conn.query(
     `SELECT hist_ingresos, hist_egresos, deudas FROM reporte r INNER JOIN cliente c ON c.ID_Cliente = r.ID_Cliente WHERE c.hash =  ?`,
     hash
