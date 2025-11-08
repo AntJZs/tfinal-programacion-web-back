@@ -38,7 +38,7 @@ const getDetalles = async (req, res) => {
     const conn = await getConnSQL();
     const result = await conn.query(
       `SELECT Codigo_cuenta, Tipo_Cuenta, nombres, apellidos, correo, telefono, direccion, balance, re.deudas, (re.hist_ingresos-re.hist_egresos) as bal_mes
- FROM cliente cl INNER JOIN reporte re ON cl.ID_Cliente = re.ID_Cliente WHERE hash = ?`,
+ FROM cliente cl LEFT JOIN reporte re ON cl.ID_Cliente = re.ID_Cliente WHERE cl.hash = ?`,
       hash
     );
     res.json({ user: result[0] });
@@ -53,7 +53,7 @@ const getBalHistory = async (req, res) => {
     const hash = req.get('hash');
     const conn = await getConnSQL();
     const result = await conn.query(
-      `SELECT cantidad, tipo, timestamp, c.nombres,  c.apellidos FROM (SELECT t.cantidad, t.tipo, t.timestamp, t.ID_receptor FROM cliente c INNER JOIN transaccion t ON t.ID_emisor = c.ID_Cliente OR t.ID_receptor = c.ID_Cliente WHERE hash = ?) li LEFT JOIN cliente c on li.ID_receptor = c.ID_Cliente
+      `SELECT cantidad, tipo, timestamp, c.nombres,  c.apellidos FROM (SELECT t.cantidad, t.tipo, t.timestamp, t.ID_emisor FROM cliente c LEFT JOIN transaccion t ON t.ID_emisor = c.ID_Cliente OR t.ID_receptor = c.ID_Cliente WHERE hash = ?) li LEFT JOIN cliente c on li.ID_emisor = c.ID_Cliente
 `,
       hash
     );
