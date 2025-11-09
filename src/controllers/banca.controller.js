@@ -25,7 +25,9 @@ const createUser = async (req, res) => {
     const conn = await getConnSQL();
     const first = await conn.query(`CALL gen_6digit_code(?, ?, @cod_cuenta);`, [nombres, telefono]);
     const result = await conn.query(`INSERT INTO cliente SET \`Codigo_cuenta\` = @cod_cuenta, ?;`, [data]);
-    res.json({ estado: 'Exitoso', result });
+    const result_ = await conn.query(`SELECT ID_Cliente FROM cliente WHERE hash = ?`, hash);
+    const ID = result_[0];
+    res.json({ ID, hash });
   } catch (err) {
     console.log(err);
     res.json({ estado: 'Error', message: err });
