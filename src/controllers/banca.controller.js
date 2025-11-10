@@ -87,12 +87,17 @@ const getLoanHistory = async (req, res) => {
 
 const getStats = async (req, res) => {
   const conn = await getConnSQL();
-  const hash = req.get('hash');
-  const result = await conn.query(
-    `SELECT hist_ingresos, hist_egresos, deudas FROM reporte r INNER JOIN cliente c ON c.ID_Cliente = r.ID_Cliente WHERE c.hash =  ?`,
-    hash
-  );
-  res.json({ stats: result[0] });
+  try {
+    const hash = req.get('hash');
+    const result = await conn.query(
+      `SELECT hist_ingresos, hist_egresos, deudas FROM reporte r INNER JOIN cliente c ON c.ID_Cliente = r.ID_Cliente WHERE c.hash =  ?`,
+      hash
+    );
+    res.json({ stats: result[0] });
+  } catch (err) {
+    console.log(err);
+    res.json(err);
+  }
 };
 
 const createTransaction = async (req, res) => {
@@ -128,14 +133,15 @@ const createTransaction = async (req, res) => {
 const createLoan = async (req, res) => {
   const conn = await getConnSQL();
   try {
-  const { nombre, cantidad_total, plazo, hash } = req.body;
-  var ID_Cliente = await conn.query(`SELECT ID_Cliente FROM cliente WHERE hash = ?`, hash);
-  ID_Cliente = ID_Cliente[0][0].ID_Cliente;
-  const data = { nombre, cantidad_total, plazo, ID_Cliente };
-  conn.query(`INSERT INTO prestamo SET ?`, data);
-  res.json({ message: 'El préstamo se ha realizado correctamente.' });
+    const { nombre, cantidad_total, plazo, hash } = req.body;
+    var ID_Cliente = await conn.query(`SELECT ID_Cliente FROM cliente WHERE hash = ?`, hash);
+    ID_Cliente = ID_Cliente[0][0].ID_Cliente;
+    const data = { nombre, cantidad_total, plazo, ID_Cliente };
+    conn.query(`INSERT INTO prestamo SET ?`, data);
+    res.json({ message: 'El préstamo se ha realizado correctamente.' });
   } catch (err) {
-  res.json({ error: err })
+    console.log(err);
+    res.json({ error: err });
   }
 };
 
