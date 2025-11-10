@@ -55,8 +55,12 @@ const getBalHistory = async (req, res) => {
     const hash = req.get('hash');
     const conn = await getConnSQL();
     const result = await conn.query(
-      `SELECT cantidad, tipo, timestamp, c.nombres,  c.apellidos FROM (SELECT t.cantidad, t.tipo, t.timestamp, t.ID_emisor FROM cliente c LEFT JOIN transaccion t ON t.ID_emisor = c.ID_Cliente OR t.ID_receptor = c.ID_Cliente WHERE hash = ?) li LEFT JOIN cliente c on li.ID_emisor = c.ID_Cliente
-`,
+      `SELECT cantidad, tipo, timestamp, ID_emisor, ID_receptor, c.nombres AS n_emisor, c.apellidos as ap_emisor, c2.nombres as n_receptor, c2.apellidos ap_receptor 
+FROM 
+(SELECT t.cantidad, t.tipo, t.timestamp, t.ID_emisor, t.ID_receptor FROM cliente c
+INNER JOIN transaccion t ON t.ID_emisor = c.ID_Cliente OR t.ID_receptor = c.ID_Cliente
+WHERE hash = ?) li
+LEFT JOIN cliente c on li.ID_emisor = c.ID_Cliente LEFT JOIN  cliente c2 on li.ID_receptor = c2.ID_Cliente`,
       hash
     );
     res.json({ user: result[0] });
@@ -98,7 +102,7 @@ const createTransaction = async (req, res) => {
     var ID_emisor = await conn.query(`SELECT ID_Cliente FROM cliente WHERE hash = ?`, hash);
     ID_emisor = ID_emisor[0][0].ID_Cliente;
     if (cantidad <= 0) {
-      res.json({ message: 'La cantidad no es válida.' });
+      res.json({ error: 'La cantidad no es válida.' });
       return;
     }
     if (tipo == 0) {
@@ -117,18 +121,22 @@ const createTransaction = async (req, res) => {
     }
     res.json({ message: 'La transacción se ha realizado correctamente.' });
   } catch (err) {
-    res.json({ message: err });
+    res.json({ error: err });
   }
 };
 
 const createLoan = async (req, res) => {
   const conn = await getConnSQL();
+  try {
   const { nombre, cantidad_total, plazo, hash } = req.body;
   var ID_Cliente = await conn.query(`SELECT ID_Cliente FROM cliente WHERE hash = ?`, hash);
   ID_Cliente = ID_Cliente[0][0].ID_Cliente;
   const data = { nombre, cantidad_total, plazo, ID_Cliente };
   conn.query(`INSERT INTO prestamo SET ?`, data);
   res.json({ message: 'El préstamo se ha realizado correctamente.' });
+  } catch (err) {
+  res.json({ error: err })
+  }
 };
 
 export const methods = {
